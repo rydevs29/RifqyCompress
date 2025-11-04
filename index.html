@@ -70,7 +70,12 @@
     .drop-zone input { display: none; }
 
     .slider-container {
-      margin: 20px 0;
+      margin: 24px 0;
+    }
+    .slider-label {
+      font-size: 16px;
+      margin-bottom: 8px;
+      display: block;
     }
     .slider {
       -webkit-appearance: none;
@@ -147,6 +152,38 @@
     }
 
     .hidden { display: none; }
+
+    /* SETTINGS MODAL */
+    .modal {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      padding: 20px;
+    }
+    .modal-content {
+      background: var(--glass);
+      backdrop-filter: blur(16px);
+      border-radius: var(--radius);
+      padding: 32px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: var(--shadow);
+    }
+    .modal h3 { margin-bottom: 16px; }
+    .modal p { font-size: 14px; opacity: 0.8; margin-bottom: 20px; }
+    .close-btn {
+      background: #ff6b6b;
+      color: white;
+      padding: 12px;
+      border: none;
+      border-radius: 16px;
+      width: 100%;
+      font-weight: 600;
+    }
   </style>
 </head>
 <body>
@@ -164,11 +201,11 @@
           <p>Drag & drop gambar di sini</p>
           <p>atau</p>
           <button class="btn" onclick="document.getElementById('file-input').click()">Pilih Gambar</button>
-          <input type="file" id="file-input" accept="image/*" multiple>
+          <input type="file" id="file-input" accept="image/*">
         </div>
 
         <div class="slider-container">
-          <label>Kualitas: <span id="quality-value">75</span>%</label>
+          <label class="slider-label">Kualitas: <span id="quality-value">75</span>%</label>
           <input type="range" class="slider" id="quality" min="10" max="100" value="75">
         </div>
 
@@ -186,32 +223,19 @@
             </div>
           </div>
           <button class="btn" id="download-btn">Download</button>
-          <button class="btn" id="download-zip" style="margin-top:8px; background:#ffd43b; color:#333;">Download ZIP</button>
         </div>
       </div>
-
-      <div class="card" style="text-align:center; background:rgba(255,212,59,0.1);">
-        <h3>Fitur Terbatas?</h3>
-        <p>Hanya 3x/hari & ada watermark</p>
-        <button class="btn" style="background:#ffd43b; color:#333;" onclick="location.href='login.html'">
-          Upgrade ke Pro
-        </button>
-      </div>
     </div>
 
-    <!-- BATCH TAB -->
-    <div id="tab-batch" class="tab-content hidden">
+    <!-- SETTINGS TAB (MODAL) -->
+    <div id="tab-settings" class="tab-content hidden">
       <div class="card">
-        <p>Upload banyak gambar sekaligus → kompres otomatis!</p>
-        <button class="btn" onclick="document.getElementById('file-input').click()">Pilih Banyak Gambar</button>
-      </div>
-    </div>
-
-    <!-- PRO TAB -->
-    <div id="tab-pro" class="tab-content hidden">
-      <div class="card">
-        <p>Unlimited | Tanpa Watermark | Batch 100+ | API</p>
-        <button class="btn" onclick="location.href='login.html'">Login Pro</button>
+        <h3>Pengaturan</h3>
+        <p>Mode Gelap: <strong>Aktif</strong></p>
+        <p>Bahasa: <strong>Indonesia</strong></p>
+        <p>Versi: <strong>1.0.0</strong></p>
+        <p>Ukuran Cache: <strong>0 MB</strong></p>
+        <button class="btn" style="margin-top:16px; background:#ff6b6b;">Hapus Cache</button>
       </div>
     </div>
   </div>
@@ -219,23 +243,38 @@
   <!-- BOTTOM NAV -->
   <div class="bottom-nav">
     <div class="nav-item active" onclick="switchTab('home')">Home</div>
-    <div class="nav-item" onclick="switchTab('batch')">Batch</div>
-    <div class="nav-item" onclick="switchTab('pro')">Pro</div>
-    <div class="nav-item" onclick="alert('Settings coming soon!')">Settings</div>
+    <div class="nav-item" onclick="openSettings()">Settings</div>
   </div>
 
-  <!-- JSZIP FOR ZIP -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <!-- SETTINGS MODAL -->
+  <div id="settings-modal" class="modal hidden">
+    <div class="modal-content">
+      <h3>Pengaturan</h3>
+      <p>Aplikasi ini 100% gratis & offline.</p>
+      <p>Dibuat oleh <strong>Rifqy</strong> © 2025</p>
+      <button class="close-btn" onclick="closeSettings()">Tutup</button>
+    </div>
+  </div>
+
   <script>
-    let originalFiles = [];
-    let compressedBlobs = [];
-    let zip = new JSZip();
+    let originalFile = null;
+    let compressedBlob = null;
 
     function switchTab(tab) {
       document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
       document.getElementById(`tab-${tab}`).classList.remove('hidden');
       document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-      event.target.classList.add('active');
+      document.querySelectorAll('.nav-item').forEach(n => {
+        if (n.textContent.trim() === (tab === 'home' ? 'Home' : 'Settings')) n.classList.add('active');
+      });
+    }
+
+    function openSettings() {
+      document.getElementById('settings-modal').classList.remove('hidden');
+    }
+
+    function closeSettings() {
+      document.getElementById('settings-modal').classList.add('hidden');
     }
 
     // Drag & Drop
@@ -245,74 +284,46 @@
     ['dragleave', 'drop'].forEach(e => dropZone.addEventListener(e, () => dropZone.classList.remove('dragover')));
     dropZone.addEventListener('drop', e => {
       e.preventDefault();
-      fileInput.files = e.dataTransfer.files;
-      handleFiles(e.dataTransfer.files);
+      if (e.dataTransfer.files[0]) {
+        fileInput.files = e.dataTransfer.files;
+        handleFile(e.dataTransfer.files[0]);
+      }
     });
-    fileInput.addEventListener('change', () => handleFiles(fileInput.files));
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files[0]) handleFile(fileInput.files[0]);
+    });
 
-    // Handle Files
-    function handleFiles(files) {
-      if (files.length === 0) return;
-      originalFiles = Array.from(files);
-      compressImages();
+    // Handle File
+    function handleFile(file) {
+      originalFile = file;
+      compressImage();
     }
 
     // Compress
-    function compressImages() {
+    function compressImage() {
       const quality = document.getElementById('quality').value / 100;
-      compressedBlobs = [];
-      zip = new JSZip();
+      document.getElementById('result').classList.remove('hidden');
 
-      const resultDiv = document.getElementById('result');
-      resultDiv.classList.remove('hidden');
+      new Compressor(originalFile, {
+        quality: quality,
+        success: (result) => {
+          compressedBlob = result;
+          const beforeUrl = URL.createObjectURL(originalFile);
+          const afterUrl = URL.createObjectURL(result);
 
-      let completed = 0;
-      originalFiles.forEach((file, index) => {
-        new Compressor(file, {
-          quality: quality,
-          success: (compressed) => {
-            compressedBlobs.push(compressed);
-            zip.file(`compressed_${index}.${compressed.type.split('/')[1]}`, compressed);
+          document.getElementById('before-img').src = beforeUrl;
+          document.getElementById('after-img').src = afterUrl;
+          document.getElementById('before-size').textContent = formatSize(originalFile.size);
+          document.getElementById('after-size').textContent = formatSize(result.size);
 
-            if (index === 0) {
-              // Preview first image
-              const beforeUrl = URL.createObjectURL(file);
-              const afterUrl = URL.createObjectURL(compressed);
-              document.getElementById('before-img').src = beforeUrl;
-              document.getElementById('after-img').src = afterUrl;
-              document.getElementById('before-size').textContent = formatSize(file.size);
-              document.getElementById('after-size').textContent = formatSize(compressed.size);
-            }
-
-            completed++;
-            if (completed === originalFiles.length) {
-              enableDownloads();
-            }
-          }
-        });
-      });
-    }
-
-    function enableDownloads() {
-      document.getElementById('download-btn').onclick = () => {
-        if (compressedBlobs.length > 0) {
-          const url = URL.createObjectURL(compressedBlobs[0]);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = 'compressed.jpg';
-          a.click();
+          document.getElementById('download-btn').onclick = () => {
+            const a = document.createElement('a');
+            a.href = afterUrl;
+            a.download = 'rifqy_compressed.jpg';
+            a.click();
+          };
         }
-      };
-
-      document.getElementById('download-zip').onclick = () => {
-        zip.generateAsync({ type: 'blob' }).then(blob => {
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = 'rifqycompress.zip';
-          a.click();
-        });
-      };
+      });
     }
 
     function formatSize(bytes) {
@@ -321,11 +332,11 @@
       return (bytes/(1024*1024)).toFixed(2) + ' MB';
     }
 
-    // Slider Update
+    // Slider
     document.getElementById('quality').addEventListener('input', function() {
       document.getElementById('quality-value').textContent = this.value;
-      if (originalFiles.length > 0) compressImages();
+      if (originalFile) compressImage();
     });
   </script>
 </body>
-</html>
+      </html>
