@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RifqyCompress</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon.png" type="image/png">
+  <meta name="theme-color" content="#6c5ce7">
+  <script src="https://cdn.jsdelivr.net/npm/compressorjs@1.2.1/dist/compressor.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #6c5ce7;
+      --secondary: #8f94fb;
+      --bg: #0f0c29;
+      --glass: rgba(255, 255, 255, 0.1);
+      --text: #ffffff;
+      --radius: 28px;
+      --shadow: 0 20px 40px rgba(0,0,0,0.3);
+      --gap: 20px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+      color: var(--text);
+      min-height: 100vh;
+      padding-bottom: 100px;
+    }
+    .container { max-width: 900px; margin: 0 auto; padding: var(--gap); }
+
+    .header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    h1 {
+      font-size: 38px;
+      background: linear-gradient(to right, #6c5ce7, #8f94fb);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+    .subtitle { font-size: 17px; opacity: 0.9; }
+
+    .card {
+      backdrop-filter: blur(16px);
+      background: var(--glass);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: var(--radius);
+      padding: 28px;
+      box-shadow: var(--shadow);
+      margin-bottom: var(--gap);
+    }
+
+    .drop-zone {
+      border: 3px dashed rgba(255,255,255,0.3);
+      border-radius: 20px;
+      padding: 40px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      margin-bottom: 20px;
+    }
+    .drop-zone:hover, .drop-zone.dragover {
+      border-color: var(--secondary);
+      background: rgba(143,148,251,0.1);
+    }
+    .drop-zone p { margin: 12px 0; opacity: 0.8; }
+    .drop-zone input { display: none; }
+
+    .slider-container {
+      margin: 20px 0;
+    }
+    .slider {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 12px;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.2);
+      outline: none;
+    }
+    .slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--secondary);
+      cursor: pointer;
+    }
+
+    .compare {
+      display: flex;
+      gap: 16px;
+      margin: 20px 0;
+    }
+    .img-box {
+      flex: 1;
+      text-align: center;
+      background: rgba(255,255,255,0.1);
+      padding: 16px;
+      border-radius: 16px;
+    }
+    .img-box img { max-width: 100%; max-height: 200px; border-radius: 12px; }
+    .size { font-size: 14px; margin-top: 8px; opacity: 0.8; }
+
+    .btn {
+      width: 100%;
+      padding: 16px;
+      font-size: 16px;
+      font-weight: 600;
+      background: linear-gradient(to right, #6c5ce7, #8f94fb);
+      color: white;
+      border: none;
+      border-radius: 18px;
+      cursor: pointer;
+      margin-top: 12px;
+    }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--glass);
+      backdrop-filter: blur(16px);
+      border-top: 1px solid rgba(255,255,255,0.2);
+      display: flex;
+      padding: 12px 0;
+      z-index: 1000;
+    }
+    .nav-item {
+      flex: 1;
+      text-align: center;
+      padding: 12px 8px;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: 18px;
+      margin: 0 8px;
+      transition: all 0.3s;
+      cursor: pointer;
+    }
+    .nav-item.active {
+      background: var(--secondary);
+      color: white;
+    }
+
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="header">
+      <h1>RifqyCompress</h1>
+      <p class="subtitle">Kompres gambar → 90% lebih kecil, tanpa hilang kualitas!</p>
+    </div>
+
+    <!-- HOME TAB -->
+    <div id="tab-home" class="tab-content">
+      <div class="card">
+        <div class="drop-zone" id="drop-zone">
+          <p>Drag & drop gambar di sini</p>
+          <p>atau</p>
+          <button class="btn" onclick="document.getElementById('file-input').click()">Pilih Gambar</button>
+          <input type="file" id="file-input" accept="image/*" multiple>
+        </div>
+
+        <div class="slider-container">
+          <label>Kualitas: <span id="quality-value">75</span>%</label>
+          <input type="range" class="slider" id="quality" min="10" max="100" value="75">
+        </div>
+
+        <div id="result" class="hidden">
+          <div class="compare">
+            <div class="img-box">
+              <p>Sebelum</p>
+              <img id="before-img" />
+              <div class="size" id="before-size"></div>
+            </div>
+            <div class="img-box">
+              <p>Sesudah</p>
+              <img id="after-img" />
+              <div class="size" id="after-size"></div>
+            </div>
+          </div>
+          <button class="btn" id="download-btn">Download</button>
+          <button class="btn" id="download-zip" style="margin-top:8px; background:#ffd43b; color:#333;">Download ZIP</button>
+        </div>
+      </div>
+
+      <div class="card" style="text-align:center; background:rgba(255,212,59,0.1);">
+        <h3>Fitur Terbatas?</h3>
+        <p>Hanya 3x/hari & ada watermark</p>
+        <button class="btn" style="background:#ffd43b; color:#333;" onclick="location.href='login.html'">
+          Upgrade ke Pro
+        </button>
+      </div>
+    </div>
+
+    <!-- BATCH TAB -->
+    <div id="tab-batch" class="tab-content hidden">
+      <div class="card">
+        <p>Upload banyak gambar sekaligus → kompres otomatis!</p>
+        <button class="btn" onclick="document.getElementById('file-input').click()">Pilih Banyak Gambar</button>
+      </div>
+    </div>
+
+    <!-- PRO TAB -->
+    <div id="tab-pro" class="tab-content hidden">
+      <div class="card">
+        <p>Unlimited | Tanpa Watermark | Batch 100+ | API</p>
+        <button class="btn" onclick="location.href='login.html'">Login Pro</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="bottom-nav">
+    <div class="nav-item active" onclick="switchTab('home')">Home</div>
+    <div class="nav-item" onclick="switchTab('batch')">Batch</div>
+    <div class="nav-item" onclick="switchTab('pro')">Pro</div>
+    <div class="nav-item" onclick="alert('Settings coming soon!')">Settings</div>
+  </div>
+
+  <!-- JSZIP FOR ZIP -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script>
+    let originalFiles = [];
+    let compressedBlobs = [];
+    let zip = new JSZip();
+
+    function switchTab(tab) {
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+      document.getElementById(`tab-${tab}`).classList.remove('hidden');
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      event.target.classList.add('active');
+    }
+
+    // Drag & Drop
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    ['dragover', 'dragenter'].forEach(e => dropZone.addEventListener(e, () => dropZone.classList.add('dragover')));
+    ['dragleave', 'drop'].forEach(e => dropZone.addEventListener(e, () => dropZone.classList.remove('dragover')));
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      fileInput.files = e.dataTransfer.files;
+      handleFiles(e.dataTransfer.files);
+    });
+    fileInput.addEventListener('change', () => handleFiles(fileInput.files));
+
+    // Handle Files
+    function handleFiles(files) {
+      if (files.length === 0) return;
+      originalFiles = Array.from(files);
+      compressImages();
+    }
+
+    // Compress
+    function compressImages() {
+      const quality = document.getElementById('quality').value / 100;
+      compressedBlobs = [];
+      zip = new JSZip();
+
+      const resultDiv = document.getElementById('result');
+      resultDiv.classList.remove('hidden');
+
+      let completed = 0;
+      originalFiles.forEach((file, index) => {
+        new Compressor(file, {
+          quality: quality,
+          success: (compressed) => {
+            compressedBlobs.push(compressed);
+            zip.file(`compressed_${index}.${compressed.type.split('/')[1]}`, compressed);
+
+            if (index === 0) {
+              // Preview first image
+              const beforeUrl = URL.createObjectURL(file);
+              const afterUrl = URL.createObjectURL(compressed);
+              document.getElementById('before-img').src = beforeUrl;
+              document.getElementById('after-img').src = afterUrl;
+              document.getElementById('before-size').textContent = formatSize(file.size);
+              document.getElementById('after-size').textContent = formatSize(compressed.size);
+            }
+
+            completed++;
+            if (completed === originalFiles.length) {
+              enableDownloads();
+            }
+          }
+        });
+      });
+    }
+
+    function enableDownloads() {
+      document.getElementById('download-btn').onclick = () => {
+        if (compressedBlobs.length > 0) {
+          const url = URL.createObjectURL(compressedBlobs[0]);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'compressed.jpg';
+          a.click();
+        }
+      };
+
+      document.getElementById('download-zip').onclick = () => {
+        zip.generateAsync({ type: 'blob' }).then(blob => {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'rifqycompress.zip';
+          a.click();
+        });
+      };
+    }
+
+    function formatSize(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' KB';
+      return (bytes/(1024*1024)).toFixed(2) + ' MB';
+    }
+
+    // Slider Update
+    document.getElementById('quality').addEventListener('input', function() {
+      document.getElementById('quality-value').textContent = this.value;
+      if (originalFiles.length > 0) compressImages();
+    });
+  </script>
+</body>
+</html>
