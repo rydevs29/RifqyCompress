@@ -70,7 +70,7 @@
     .drop-zone input { display: none; }
 
     .slider-container {
-      margin: 24px 0;
+      margin: 20px 0;
     }
     .slider-label {
       font-size: 16px;
@@ -92,6 +92,34 @@
       border-radius: 50%;
       background: var(--secondary);
       cursor: pointer;
+    }
+
+    /* TOMBOL HD */
+    .hd-buttons {
+      display: flex;
+      gap: 12px;
+      margin: 16px 0;
+    }
+    .hd-btn {
+      flex: 1;
+      padding: 14px;
+      font-size: 15px;
+      font-weight: 600;
+      border: none;
+      border-radius: 18px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .hd-btn.min {
+      background: linear-gradient(to right, #ff6b6b, #ee5a52);
+      color: white;
+    }
+    .hd-btn.max {
+      background: linear-gradient(to right, #51cf66, #69db7c);
+      color: white;
+    }
+    .hd-btn:active {
+      transform: scale(0.98);
     }
 
     .compare {
@@ -153,7 +181,7 @@
 
     .hidden { display: none; }
 
-    /* SETTINGS MODAL – BUG FIXED */
+    /* SETTINGS MODAL */
     .modal {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -163,34 +191,20 @@
       justify-content: center;
       z-index: 9999;
       padding: 20px;
-      pointer-events: auto;
     }
-    .modal.hidden {
-      display: none;
-      pointer-events: none;
-    }
+    .modal.hidden { display: none; }
     .modal-content {
       background: var(--glass);
       backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
       border-radius: var(--radius);
       padding: 32px;
       width: 100%;
       max-width: 400px;
       box-shadow: var(--shadow);
       text-align: center;
-      pointer-events: auto;
     }
-    .modal h3 {
-      font-size: 24px;
-      margin-bottom: 16px;
-    }
-    .modal p {
-      font-size: 15px;
-      opacity: 0.9;
-      margin-bottom: 12px;
-      line-height: 1.5;
-    }
+    .modal h3 { font-size: 24px; margin-bottom: 16px; }
+    .modal p { font-size: 15px; opacity: 0.9; margin-bottom: 12px; line-height: 1.5; }
     .close-btn {
       background: linear-gradient(to right, #ff6b6b, #ee5a52);
       color: white;
@@ -202,11 +216,6 @@
       font-size: 16px;
       cursor: pointer;
       margin-top: 20px;
-      transition: all 0.3s;
-    }
-    .close-btn:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 8px 20px rgba(255,107,107,0.3);
     }
   </style>
 </head>
@@ -231,6 +240,12 @@
         <div class="slider-container">
           <label class="slider-label">Kualitas: <span id="quality-value">75</span>%</label>
           <input type="range" class="slider" id="quality" min="10" max="100" value="75">
+        </div>
+
+        <!-- TOMBOL HD -->
+        <div class="hd-buttons">
+          <button class="hd-btn min" onclick="setQuality(0)">0% (Kecil)</button>
+          <button class="hd-btn max" onclick="setQuality(100)">100% (HD)</button>
         </div>
 
         <div id="result" class="hidden">
@@ -258,7 +273,7 @@
     <div class="nav-item" onclick="openSettings()">Settings</div>
   </div>
 
-  <!-- SETTINGS MODAL – TOMBOL TUTUP 100% JALAN -->
+  <!-- SETTINGS MODAL -->
   <div id="settings-modal" class="modal hidden">
     <div class="modal-content">
       <h3>Pengaturan</h3>
@@ -281,15 +296,20 @@
       });
     }
 
-    // MODAL – BUG FIXED
     function openSettings() {
-      const modal = document.getElementById('settings-modal');
-      modal.classList.remove('hidden');
+      document.getElementById('settings-modal').classList.remove('hidden');
     }
 
     function closeSettings() {
-      const modal = document.getElementById('settings-modal');
-      modal.classList.add('hidden');
+      document.getElementById('settings-modal').classList.add('hidden');
+    }
+
+    // TOMBOL HD
+    function setQuality(percent) {
+      const slider = document.getElementById('quality');
+      slider.value = percent;
+      document.getElementById('quality-value').textContent = percent;
+      if (originalFile) compressImage();
     }
 
     // Drag & Drop
@@ -334,7 +354,7 @@
           document.getElementById('download-btn').onclick = () => {
             const a = document.createElement('a');
             a.href = afterUrl;
-            a.download = 'rifqy_compressed.jpg';
+            a.download = `rifqy_compressed_${quality === 1 ? 'hd' : 'compressed'}.jpg`;
             a.click();
           };
         }
@@ -347,7 +367,7 @@
       return (bytes/(1024*1024)).toFixed(2) + ' MB';
     }
 
-    // Slider
+    // Slider Update
     document.getElementById('quality').addEventListener('input', function() {
       document.getElementById('quality-value').textContent = this.value;
       if (originalFile) compressImage();
